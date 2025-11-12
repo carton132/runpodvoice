@@ -39,51 +39,34 @@ Local setup for running VibeVoice-Large-Q8 text-to-speech model on RunPod.
 3. **Important:** Attach your network volume under "Select Network Volume"
 4. Deploy the pod
 
-### 3. Upload Your Files
+### 3. One-Command Setup
 
-Upload these files to your RunPod instance:
-- `requirements.txt`
-- `vibevoice.py`
-- `setup_network_volume.sh`
-- `sample_inputs.txt` (optional)
-
-You can use RunPod's web interface or SSH/rsync.
-
-### 4. Configure Network Volume (If Using)
-
-SSH into your pod and run the setup script:
+SSH into your pod and run:
 
 ```bash
+# Clone and setup in one go
+git clone https://github.com/carton132/runpodvoice.git
+cd runpodvoice
 chmod +x setup_network_volume.sh
 ./setup_network_volume.sh
+```
+
+**That's it!** The script automatically:
+- ✓ Creates cache directory on network volume
+- ✓ Creates virtual environment on network volume
+- ✓ Installs all Python dependencies
+- ✓ Configures environment variables
+- ✓ Persists everything to ~/.bashrc
+
+### 4. Activate Environment
+
+```bash
 source ~/.bashrc
 ```
 
-This will:
-- Create a cache directory on your network volume
-- Set environment variables to use the network volume
-- Persist settings across sessions
+Or close and reopen your terminal.
 
-**Manual setup (alternative):**
-```bash
-export HF_HOME="/workspace/huggingface_cache"
-export TRANSFORMERS_CACHE="/workspace/huggingface_cache/transformers"
-```
-
-**Note:** RunPod mounts network volumes at `/workspace` by default.
-
-### 5. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-This will install:
-- transformers (>=4.51.3)
-- bitsandbytes (>=0.43.0)
-- torch, scipy, accelerate
-
-### 6. Run VibeVoice
+### 5. Run VibeVoice
 
 #### Basic Usage
 
@@ -126,7 +109,7 @@ Process all lines:
 python vibevoice.py --batch inputs.txt
 ```
 
-### 7. Download Output Files
+### 6. Download Output Files
 
 Audio files are saved in the `outputs/` directory. Download them using:
 - RunPod web interface

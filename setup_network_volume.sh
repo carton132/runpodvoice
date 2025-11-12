@@ -1,8 +1,10 @@
 #!/bin/bash
-# Setup script for VibeVoice with RunPod network volume
+# Complete setup script for VibeVoice on RunPod with network volume
+
+set -e  # Exit on error
 
 echo "==================================="
-echo "VibeVoice Network Volume Setup"
+echo "VibeVoice Complete Setup"
 echo "==================================="
 echo ""
 
@@ -30,41 +32,83 @@ fi
 echo "Using network volume: $NETWORK_VOLUME"
 echo ""
 
-# Create cache directory on network volume
+# Step 1: Create cache directory on network volume
+echo "[1/5] Setting up cache directory..."
 CACHE_DIR="$NETWORK_VOLUME/huggingface_cache"
 mkdir -p "$CACHE_DIR"
-echo "Created cache directory: $CACHE_DIR"
+echo "✓ Cache directory created: $CACHE_DIR"
+echo ""
 
-# Set environment variables
+# Step 2: Create virtual environment on network volume
+echo "[2/5] Creating virtual environment on network volume..."
+VENV_DIR="$NETWORK_VOLUME/venv"
+if [ ! -d "$VENV_DIR" ]; then
+    python -m venv "$VENV_DIR"
+    echo "✓ Virtual environment created: $VENV_DIR"
+else
+    echo "✓ Virtual environment already exists: $VENV_DIR"
+fi
+echo ""
+
+# Step 3: Set environment variables
+echo "[3/5] Configuring environment variables..."
 export HF_HOME="$CACHE_DIR"
 export TRANSFORMERS_CACHE="$CACHE_DIR/transformers"
-
-echo ""
-echo "Environment variables set:"
+echo "✓ Environment variables set"
 echo "  HF_HOME=$HF_HOME"
 echo "  TRANSFORMERS_CACHE=$TRANSFORMERS_CACHE"
 echo ""
 
-# Add to bashrc for persistence
-if ! grep -q "HF_HOME=$CACHE_DIR" ~/.bashrc 2>/dev/null; then
-    echo "" >> ~/.bashrc
-    echo "# VibeVoice cache on network volume" >> ~/.bashrc
-    echo "export HF_HOME=\"$CACHE_DIR\"" >> ~/.bashrc
-    echo "export TRANSFORMERS_CACHE=\"$CACHE_DIR/transformers\"" >> ~/.bashrc
-    echo "Added environment variables to ~/.bashrc"
-else
-    echo "Environment variables already in ~/.bashrc"
-fi
+# Step 4: Add to bashrc for persistence
+echo "[4/5] Persisting configuration to ~/.bashrc..."
+if ! grep -q "VibeVoice environment" ~/.bashrc 2>/dev/null; then
+    cat >> ~/.bashrc << 'EOF'
 
+# VibeVoice environment
+export HF_HOME="/workspace/huggingface_cache"
+export TRANSFORMERS_CACHE="/workspace/huggingface_cache/transformers"
+source /workspace/venv/bin/activate
+EOF
+    echo "✓ Configuration added to ~/.bashrc"
+else
+    echo "✓ Configuration already in ~/.bashrc"
+fi
 echo ""
+
+# Step 5: Activate venv and install dependencies
+echo "[5/5] Installing dependencies..."
+source "$VENV_DIR/bin/activate"
+
+if [ -f "requirements.txt" ]; then
+    echo "Installing from requirements.txt..."
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    echo "✓ All dependencies installed"
+else
+    echo "⚠ requirements.txt not found in current directory"
+    echo "Make sure you're running this from the project directory"
+fi
+echo ""
+
 echo "==================================="
-echo "Setup complete!"
+echo "✓ Setup Complete!"
 echo "==================================="
+echo ""
+echo "Configuration:"
+echo "  • Virtual environment: $VENV_DIR"
+echo "  • Model cache: $CACHE_DIR"
+echo "  • Python: $(which python)"
 echo ""
 echo "Next steps:"
-echo "1. Run: source ~/.bashrc"
-echo "2. Run: pip install -r requirements.txt"
-echo "3. Run: python vibevoice.py"
+echo "  1. Close and reopen your terminal, OR run:"
+echo "     source ~/.bashrc"
 echo ""
-echo "Your models will be cached to: $CACHE_DIR"
-echo "This directory will persist across pod restarts."
+echo "  2. Generate your first audio:"
+echo "     python vibevoice.py"
+echo ""
+echo "  3. Custom text generation:"
+echo "     python vibevoice.py --text \"Your custom text\""
+echo ""
+echo "Everything persists on the network volume!"
+echo "Future pod sessions will start instantly."
+echo ""
