@@ -77,7 +77,7 @@ python vibevoice.py
 
 Or explicitly specify cache directory:
 ```bash
-python vibevoice.py --cache-dir /workspace/huggingface_cache
+python vibevoice.py --cache-dir /workspace/models
 ```
 
 Generate speech from custom text:

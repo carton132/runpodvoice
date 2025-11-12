@@ -34,7 +34,7 @@ echo ""
 
 # Step 1: Create cache directory on network volume
 echo "[1/5] Setting up cache directory..."
-CACHE_DIR="$NETWORK_VOLUME/huggingface_cache"
+CACHE_DIR="$NETWORK_VOLUME/models"
 mkdir -p "$CACHE_DIR"
 echo "✓ Cache directory created: $CACHE_DIR"
 echo ""
@@ -65,8 +65,8 @@ if ! grep -q "VibeVoice environment" ~/.bashrc 2>/dev/null; then
     cat >> ~/.bashrc << 'EOF'
 
 # VibeVoice environment
-export HF_HOME="/workspace/huggingface_cache"
-export TRANSFORMERS_CACHE="/workspace/huggingface_cache/transformers"
+export HF_HOME="/workspace/models"
+export TRANSFORMERS_CACHE="/workspace/models/transformers"
 source /workspace/venv/bin/activate
 EOF
     echo "✓ Configuration added to ~/.bashrc"
