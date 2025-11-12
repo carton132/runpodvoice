@@ -1,0 +1,4 @@
+Hello, this is VibeVoice speaking. I'm a powerful text-to-speech model.
+Welcome to the future of AI-generated speech synthesis.
+This model runs efficiently on modern GPUs with quantized weights.
+You can generate natural-sounding speech for any text you provide.
