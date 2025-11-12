@@ -1,114 +1,90 @@
 #!/bin/bash
-# Complete setup script for VibeVoice on RunPod with network volume
+# RunPod startup script for VibeVoice
+# Clones fresh code to container disk, sets up venv, points to persistent models on network volume
 
 set -e  # Exit on error
 
 echo "==================================="
-echo "VibeVoice Complete Setup"
+echo "VibeVoice RunPod Startup"
 echo "==================================="
 echo ""
 
-# Default network volume path on RunPod
+# Configuration
 NETWORK_VOLUME="/workspace"
+APP_DIR="/app"
+REPO_URL="https://github.com/carton132/runpodvoice.git"
 
-# Check if network volume is mounted
+# Step 1: Check network volume exists
+echo "[1/5] Checking network volume..."
 if [ ! -d "$NETWORK_VOLUME" ]; then
-    echo "WARNING: Network volume not found at $NETWORK_VOLUME"
+    echo "ERROR: Network volume not found at $NETWORK_VOLUME"
     echo "Make sure you've attached a network volume to your pod."
-    echo ""
-    echo "Common RunPod network volume paths:"
-    echo "  - /workspace (standard)"
-    echo "  - /runpod-volume (alternative)"
-    echo ""
-    read -p "Enter custom network volume path (or press Enter to skip): " CUSTOM_PATH
-    if [ -n "$CUSTOM_PATH" ]; then
-        NETWORK_VOLUME="$CUSTOM_PATH"
-    else
-        echo "Skipping network volume setup."
-        exit 1
-    fi
+    exit 1
 fi
-
-echo "Using network volume: $NETWORK_VOLUME"
+echo "✓ Network volume found: $NETWORK_VOLUME"
 echo ""
 
-# Step 1: Create cache directory on network volume
-echo "[1/5] Setting up cache directory..."
+# Step 2: Clone latest code from GitHub
+echo "[2/5] Cloning latest code from GitHub..."
+if [ -d "$APP_DIR" ]; then
+    echo "Removing old app directory..."
+    rm -rf "$APP_DIR"
+fi
+git clone "$REPO_URL" "$APP_DIR"
+cd "$APP_DIR"
+echo "✓ Code cloned to: $APP_DIR"
+echo ""
+
+# Step 3: Create fresh virtual environment
+echo "[3/5] Creating virtual environment..."
+python -m venv venv
+source venv/bin/activate
+echo "✓ Virtual environment created and activated"
+echo ""
+
+# Step 4: Install Python dependencies
+echo "[4/5] Installing dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt
+echo "✓ Dependencies installed"
+echo ""
+
+# Step 5: Configure environment for persistent model storage
+echo "[5/5] Configuring model cache on network volume..."
 CACHE_DIR="$NETWORK_VOLUME/models"
 mkdir -p "$CACHE_DIR"
-echo "✓ Cache directory created: $CACHE_DIR"
-echo ""
+mkdir -p "$CACHE_DIR/transformers"
 
-# Step 2: Create virtual environment on network volume
-echo "[2/5] Creating virtual environment on network volume..."
-VENV_DIR="$NETWORK_VOLUME/venv"
-if [ ! -d "$VENV_DIR" ]; then
-    python -m venv "$VENV_DIR"
-    echo "✓ Virtual environment created: $VENV_DIR"
-else
-    echo "✓ Virtual environment already exists: $VENV_DIR"
-fi
-echo ""
-
-# Step 3: Set environment variables
-echo "[3/5] Configuring environment variables..."
 export HF_HOME="$CACHE_DIR"
 export TRANSFORMERS_CACHE="$CACHE_DIR/transformers"
-echo "✓ Environment variables set"
+
+echo "✓ Environment configured"
+echo "  Cache directory: $CACHE_DIR"
 echo "  HF_HOME=$HF_HOME"
 echo "  TRANSFORMERS_CACHE=$TRANSFORMERS_CACHE"
-echo ""
-
-# Step 4: Add to bashrc for persistence
-echo "[4/5] Persisting configuration to ~/.bashrc..."
-if ! grep -q "VibeVoice environment" ~/.bashrc 2>/dev/null; then
-    cat >> ~/.bashrc << 'EOF'
-
-# VibeVoice environment
-export HF_HOME="/workspace/models"
-export TRANSFORMERS_CACHE="/workspace/models/transformers"
-source /workspace/venv/bin/activate
-EOF
-    echo "✓ Configuration added to ~/.bashrc"
-else
-    echo "✓ Configuration already in ~/.bashrc"
-fi
-echo ""
-
-# Step 5: Activate venv and install dependencies
-echo "[5/5] Installing dependencies..."
-source "$VENV_DIR/bin/activate"
-
-if [ -f "requirements.txt" ]; then
-    echo "Installing from requirements.txt..."
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    echo "✓ All dependencies installed"
-else
-    echo "⚠ requirements.txt not found in current directory"
-    echo "Make sure you're running this from the project directory"
-fi
 echo ""
 
 echo "==================================="
 echo "✓ Setup Complete!"
 echo "==================================="
 echo ""
-echo "Configuration:"
-echo "  • Virtual environment: $VENV_DIR"
-echo "  • Model cache: $CACHE_DIR"
-echo "  • Python: $(which python)"
+echo "Working directory: $APP_DIR"
+echo "Virtual environment: ACTIVATED"
+echo "Model cache: $CACHE_DIR"
 echo ""
-echo "Next steps:"
-echo "  1. Close and reopen your terminal, OR run:"
-echo "     source ~/.bashrc"
+
+# Check if models exist
+if [ -d "$CACHE_DIR/hub" ] && [ "$(ls -A $CACHE_DIR/hub 2>/dev/null)" ]; then
+    echo "✓ Models found in cache - will load instantly"
+else
+    echo "⚠ No models in cache yet"
+    echo "  First run will download ~11.6 GB to network volume"
+    echo "  Subsequent runs will be instant"
+fi
 echo ""
-echo "  2. Generate your first audio:"
-echo "     python vibevoice.py"
-echo ""
-echo "  3. Custom text generation:"
-echo "     python vibevoice.py --text \"Your custom text\""
-echo ""
-echo "Everything persists on the network volume!"
-echo "Future pod sessions will start instantly."
+
+echo "Ready to run:"
+echo "  cd $APP_DIR"
+echo "  source venv/bin/activate"
+echo "  python vibevoice.py"
 echo ""

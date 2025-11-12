@@ -47,28 +47,28 @@ SSH into your pod and run:
 # Clone and setup in one go
 git clone https://github.com/carton132/runpodvoice.git
 cd runpodvoice
-chmod +x setup_network_volume.sh
-./setup_network_volume.sh
+chmod +x startup.sh
+./startup.sh
 ```
 
 **That's it!** The script automatically:
-- ✓ Creates cache directory on network volume
-- ✓ Creates virtual environment on network volume
+- ✓ Clones latest code from GitHub to /app
+- ✓ Creates fresh virtual environment
 - ✓ Installs all Python dependencies
-- ✓ Configures environment variables
-- ✓ Persists everything to ~/.bashrc
+- ✓ Configures model cache on network volume
+- ✓ Uses persistent storage at /workspace for models
 
-### 4. Activate Environment
+### 4. Run Your App
+
+After the startup script completes, you're ready to go:
 
 ```bash
-source ~/.bashrc
+cd /app
+source venv/bin/activate
+python vibevoice.py
 ```
 
-Or close and reopen your terminal.
-
-### 5. Run VibeVoice
-
-#### Basic Usage
+#### Advanced Usage
 
 Generate speech (using network volume cache):
 ```bash
@@ -109,11 +109,11 @@ Process all lines:
 python vibevoice.py --batch inputs.txt
 ```
 
-### 6. Download Output Files
+### 5. Download Output Files
 
-Audio files are saved in the `outputs/` directory. Download them using:
+Audio files are saved in the `/app/outputs/` directory. Download them using:
 - RunPod web interface
-- SCP: `scp user@pod-ip:~/outputs/*.wav ./local_folder/`
+- SCP: `scp user@pod-ip:/app/outputs/*.wav ./local_folder/`
 
 ## Model Details
 
@@ -143,13 +143,13 @@ Audio files are saved in the `outputs/` directory. Download them using:
 
 ## First Run
 
-**With network volume configured:**
-- First ever run: Downloads ~11.6 GB to network volume (one time)
-- All future runs: Instant load from cache
+**With network volume at /workspace (required):**
+- First ever run: Downloads ~11.6 GB to /workspace/models (one time)
+- All future pod restarts: Instant load from cache
+- Code and venv rebuilt fresh each time from GitHub
 
 **Without network volume:**
-- Downloads to `~/.cache/huggingface/` on container disk
-- Erased when pod is terminated
+- Models re-download every pod restart (not recommended)
 
 ## GPU Memory Usage
 
